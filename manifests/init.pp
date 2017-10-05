@@ -43,18 +43,42 @@
 # Copyright 2017 Your name here, unless otherwise noted.
 #
 class yumcheckupdates {
-    exec {
-        "yum-update":
-            path => '/root/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/puppetlabs/bin:/root/bin',
-            command => "yum check-update -q | cut -d ' ' -f 1 | grep -e [a-Z] | tr '\\n' ' ' > /tmp/yumcheckupdates; if [ \$(wc -c /tmp/yumcheckupdates | sed 's/ //g' | cut -d '/' -f 1) -eq 0 ]; then printf empty > /tmp/yumcheckupdateslist; printf no > /tmp/yumcheckupdates; else cat /tmp/yumcheckupdates > /tmp/yumcheckupdateslist; printf yes > /tmp/yumcheckupdates; fi; exit 0",
-            timeout => 30,
-            notify => undef,
-    }
-    exec {
-        "yum-update-security":
-            path => '/root/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/puppetlabs/bin:/root/bin',
-            command => "yum check-update --security -q | cut -d ' ' -f 1 | grep -e [a-Z] | tr '\\n' ' ' > /tmp/yumcheckupdatessecurity; if [ \$(wc -c /tmp/yumcheckupdatessecurity | sed 's/ //g' | cut -d '/' -f 1) -eq 0 ]; then printf empty > /tmp/yumcheckupdateslistsecurity; printf no > /tmp/yumcheckupdatessecurity; else cat /tmp/yumcheckupdatessecurity > /tmp/yumcheckupdateslistsecurity; printf yes > /tmp/yumcheckupdatessecurity; fi; exit 0",
-            timeout => 30,
-            notify => undef,
-    }
+	file {
+		"yum_check_updates":
+			ensure => 'file',
+			content => "#!/bin/bash
+PATH='/root/perl5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/puppetlabs/bin:/root/bin'
+LANG=C
+
+yum check-update -q | cut -d ' ' -f 1 | grep -e [a-zA-Z] | tr '\\n' ' ' > /tmp/yumcheckupdates
+if [ \$(wc -c /tmp/yumcheckupdates | sed 's/ //g' | cut -d '/' -f 1) -eq 0 ]; then
+	printf empty > /tmp/yumcheckupdateslist
+	printf no > /tmp/yumcheckupdates
+else
+	cat /tmp/yumcheckupdates > /tmp/yumcheckupdateslist
+	printf yes > /tmp/yumcheckupdates
+fi
+
+yum check-update --security -q | cut -d ' ' -f 1 | grep -e [a-zA-Z] | tr '\\n' ' ' > /tmp/yumcheckupdatessecurity
+if [ \$(wc -c /tmp/yumcheckupdatessecurity | sed 's/ //g' | cut -d '/' -f 1) -eq 0 ]; then
+	printf empty > /tmp/yumcheckupdateslistsecurity
+	printf no > /tmp/yumcheckupdatessecurity
+else
+	cat /tmp/yumcheckupdatessecurity > /tmp/yumcheckupdateslistsecurity
+	printf yes > /tmp/yumcheckupdatessecurity
+fi
+
+exit 0
+",
+			path => '/usr/local/bin/yum_check_updates.sh',
+			owner => 'root',
+			group => 'root',
+			mode => '0755',
+	}
+
+	exec {
+		"yum-update":
+			command => '/usr/local/bin/yum_check_updates.sh',
+			timeout => 60,
+	}
 }
