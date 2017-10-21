@@ -68,6 +68,21 @@ else
 	printf yes > /tmp/yumcheckupdatessecurity
 fi
 
+yum -q versionlock list | cut -d ':' -f 2- | tr '\\n' ' ' > /tmp/yumholdlist
+if [ \$(wc -c /tmp/yumholdlist | sed 's/ //g') -eq 0 ]; then
+	printf empty > /tmp/yumcheckholdlist
+	printf no > /tmp/yumcheckhold
+else
+	cat /tmp/yumholdlist > /tmp/yumcheckholdlist
+	printf yes > /tmp/yumcheckhold
+fi
+
+if needs-restarting -r; then
+	printf no > /tmp/yumneedsreboot
+else
+	printf yes > /tmp/yumneedsreboot
+fi
+
 exit 0
 ",
 			path => '/usr/local/bin/yum_check_updates.sh',

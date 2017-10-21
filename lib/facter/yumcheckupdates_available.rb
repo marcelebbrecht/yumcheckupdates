@@ -30,3 +30,27 @@ Facter.add("yum_updates_available_security") do
 	end
 end
 
+Facter.add("yum_hold_available_list") do
+	setcode do
+		if File.exist? '/tmp/yumcheckholdlist'
+			Facter::Core::Execution.exec('cat /tmp/yumcheckholdlist')
+        	end
+	end
+end
+
+Facter.add("yum_hold_available") do
+	setcode do
+		if File.exist? '/tmp/yumcheckhold'
+			Facter::Core::Execution.exec('cat /tmp/yumcheckhold')
+        	end
+	end
+end
+
+Facter.add("yum_needs_reboot") do
+	setcode do
+		if File.exist? '/tmp/yumneedsreboot'
+			Facter::Core::Execution.exec('cat /tmp/yumneedsreboot')
+        	end
+	end
+end
+
